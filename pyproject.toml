@@ -20,3 +20,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["gpt_from_scratch*"]
 exclude = ["notebooks*", "data*"]
+
+[tool.ruff]
+line-length = 120

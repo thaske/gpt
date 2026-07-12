@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import nn, ones, pi, pow, sqrt, tanh, tensor, triu
 
 
 class GELU(nn.Module):
@@ -7,17 +7,7 @@ class GELU(nn.Module):
         super().__init__()
 
     def forward(self, x):
-        return (
-            0.5
-            * x
-            * (
-                1
-                + torch.tanh(
-                    torch.sqrt(torch.tensor(2.0 / torch.pi))
-                    * (x + 0.044715 * torch.pow(x, 3))
-                )
-            )
-        )
+        return 0.5 * x * (1 + tanh(sqrt(tensor(2.0 / pi)) * (x + 0.044715 * pow(x, 3))))
 
 
 class FeedForward(nn.Module):
@@ -49,9 +39,7 @@ class MultiHeadAttention(nn.Module):
         self.out_proj = nn.Linear(d_out, d_out)
         self.dropout = nn.Dropout(dropout)
 
-        self.register_buffer(
-            "mask", torch.triu(torch.ones(context_length, context_length), diagonal=1)
-        )
+        self.register_buffer("mask", triu(ones(context_length, context_length), diagonal=1))
 
     def forward(self, x):
         b, num_tokens, d_in = x.shape
@@ -81,9 +69,7 @@ class MultiHeadAttention(nn.Module):
         attn_scores.masked_fill_(mask_bool, -torch.inf)
 
         # Softmax, logits -> prob
-        attn_weights: torch.Tensor = torch.softmax(
-            attn_scores / keys.shape[-1] ** 0.5, dim=-1
-        )
+        attn_weights: torch.Tensor = torch.softmax(attn_scores / keys.shape[-1] ** 0.5, dim=-1)
 
         # Apply dropout
         attn_weights: torch.Tensor = self.dropout(attn_weights)
@@ -145,9 +131,7 @@ class GPTModel(nn.Module):
         self.pos_emb = nn.Embedding(cfg["context_length"], cfg["emb_dim"])
         self.drop_emb = nn.Dropout(cfg["emb_drop_rate"])
 
-        self.trf_blocks = nn.Sequential(
-            *[TransformerBlock(cfg) for _ in range(cfg["n_layers"])]
-        )
+        self.trf_blocks = nn.Sequential(*[TransformerBlock(cfg) for _ in range(cfg["n_layers"])])
         self.final_norm = nn.LayerNorm(cfg["emb_dim"])
         self.out_head = nn.Linear(cfg["emb_dim"], cfg["vocab_size"], bias=False)
 
